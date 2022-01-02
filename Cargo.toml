@@ -1,5 +1,5 @@
 [package]
-name = "writing-an-os-in-rust"
+name = "mini_os"
 version = "0.1.0"
 edition = "2021"
 
