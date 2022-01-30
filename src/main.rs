@@ -9,9 +9,21 @@ extern crate alloc;
 use alloc::{boxed::Box, rc::Rc, vec, vec::Vec};
 use bootloader::{entry_point, BootInfo};
 use core::panic::PanicInfo;
-use mini_os::println;
+use mini_os::{
+    println,
+    task::{simple_executor::SimpleExecutor, Task},
+};
 
 entry_point!(kernel_main);
+
+async fn async_number() -> u32 {
+    42
+}
+
+async fn example_task() {
+    let number = async_number().await;
+    println!("async number: {}", number);
+}
 
 fn kernel_main(boot_info: &'static BootInfo) -> ! {
     use mini_os::allocator;
@@ -27,6 +39,10 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     let mut frame_allocator = unsafe { BootInfoFrameAllocator::init(&boot_info.memory_map) };
 
     allocator::init_heap(&mut mapper, &mut frame_allocator).expect("heap initialization failed");
+
+    let mut executor = SimpleExecutor::new();
+    executor.spawn(Task::new(example_task()));
+    executor.run();
 
     let heap_value = Box::new(41);
     println!("heap_value at {:p}", heap_value);
