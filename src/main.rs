@@ -6,12 +6,11 @@
 
 extern crate alloc;
 
-use alloc::{boxed::Box, rc::Rc, vec, vec::Vec};
 use bootloader::{entry_point, BootInfo};
 use core::panic::PanicInfo;
 use mini_os::{
     println,
-    task::{keyboard, simple_executor::SimpleExecutor, Task},
+    task::{executor::Executor, keyboard, Task},
 };
 
 entry_point!(kernel_main);
@@ -40,31 +39,34 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
 
     allocator::init_heap(&mut mapper, &mut frame_allocator).expect("heap initialization failed");
 
-    let mut executor = SimpleExecutor::new();
+    #[cfg(test)]
+    test_main();
+
+    let mut executor = Executor::new();
     executor.spawn(Task::new(example_task()));
     executor.spawn(Task::new(keyboard::print_keypresses()));
     executor.run();
 
-    let heap_value = Box::new(41);
-    println!("heap_value at {:p}", heap_value);
+    // let heap_value = Box::new(41);
+    // println!("heap_value at {:p}", heap_value);
 
-    let mut v = Vec::new();
-    for i in 0..500 {
-        v.push(i);
-    }
-    println!("v at {:p}", v.as_slice());
+    // let mut v = Vec::new();
+    // for i in 0..500 {
+    //     v.push(i);
+    // }
+    // println!("v at {:p}", v.as_slice());
 
-    let reference_counted = Rc::new(vec![1, 2, 3]);
-    let cloned_reference = reference_counted.clone();
-    println!(
-        "current reference count is {}",
-        Rc::strong_count(&cloned_reference)
-    );
-    core::mem::drop(reference_counted);
-    println!(
-        "reference count is {} now",
-        Rc::strong_count(&cloned_reference)
-    );
+    // let reference_counted = Rc::new(vec![1, 2, 3]);
+    // let cloned_reference = reference_counted.clone();
+    // println!(
+    //     "current reference count is {}",
+    //     Rc::strong_count(&cloned_reference)
+    // );
+    // core::mem::drop(reference_counted);
+    // println!(
+    //     "reference count is {} now",
+    //     Rc::strong_count(&cloned_reference)
+    // );
 
     // let page = Page::containing_address(VirtAddr::new(0));
     // let page = Page::containing_address(VirtAddr::new(0xdeadbeaf000));
@@ -104,12 +106,6 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     //     "Level 4 page table at: {:?}",
     //     level_4_page_table.start_address()
     // );
-
-    #[cfg(test)]
-    test_main();
-
-    println!("It did not crash!");
-    mini_os::hlt_loop();
 }
 
 #[cfg(not(test))]
